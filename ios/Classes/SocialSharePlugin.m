@@ -135,10 +135,17 @@
 - (void)facebookShareLink:(NSString*)quote
                       url:(NSString*)url {
     FBSDKShareLinkContent *content = [[FBSDKShareLinkContent alloc] init];
+    UIViewController* controller = [UIApplication sharedApplication].delegate.window.rootViewController;
     content.contentURL = [NSURL URLWithString:url];
     content.quote = quote;
-    UIViewController* controller = [UIApplication sharedApplication].delegate.window.rootViewController;
-    [FBSDKShareDialog showFromViewController:controller withContent:content delegate:self];
+    FBSDKShareDialog *dialog = [[FBSDKShareDialog alloc] init];
+    dialog.fromViewController = controller;
+    dialog.shareContent = content;
+    dialog.mode = FBSDKShareDialogModeNative;
+    if (![dialog canShow]) {
+        dialog.mode = FBSDKShareDialogModeFeedBrowser;
+    }
+    [dialog show];
 }
 
 - (void)instagramShare:(NSString*)imagePath {
