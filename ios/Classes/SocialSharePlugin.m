@@ -142,6 +142,7 @@
     dialog.fromViewController = controller;
     dialog.shareContent = content;
     dialog.mode = FBSDKShareDialogModeNative;
+    dialog.delegate = self;
     if (![dialog canShow]) {
         dialog.mode = FBSDKShareDialogModeFeedBrowser;
     }
