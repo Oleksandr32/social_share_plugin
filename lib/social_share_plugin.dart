@@ -1,6 +1,10 @@
 import 'dart:async';
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:meta/meta.dart';
 import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
 
 typedef Future<dynamic> OnCancelHandler();
 typedef Future<dynamic> OnErrorHandler(String error);
@@ -16,7 +20,7 @@ class SocialSharePlugin {
 
   static Future<void> shareToFeedInstagram({
     String type = 'image/*',
-    @required String path,
+    @required Uint8List imageBytes,
     OnSuccessHandler onSuccess,
     OnCancelHandler onCancel,
   }) async {
@@ -30,9 +34,14 @@ class SocialSharePlugin {
           throw UnsupportedError("Unknown method called");
       }
     });
+
+    final tempDir = await getTemporaryDirectory();
+    final file = await File('${tempDir.path}/image${DateTime.now().toString()}.jpg').create();
+    file.writeAsBytesSync(imageBytes);
+
     return _channel.invokeMethod('shareToFeedInstagram', <String, dynamic>{
       'type': type,
-      'path': path,
+      'path': file.path,
     });
   }
 
