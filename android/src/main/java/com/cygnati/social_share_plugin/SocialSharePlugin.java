@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
+import android.provider.MediaStore;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -21,6 +22,7 @@ import com.facebook.share.model.SharePhotoContent;
 import com.facebook.share.widget.ShareDialog;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.List;
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
@@ -137,7 +139,7 @@ public class SocialSharePlugin
             case "shareToFeedInstagram":
                 try {
                     pm.getPackageInfo(INSTAGRAM_PACKAGE_NAME, PackageManager.GET_ACTIVITIES);
-                    instagramShare(call.<String>argument("type"), call.<String>argument("path"));
+                    instagramShare(call.<String>argument("type"), call.<String>argument("path"), call.<String>argument("name"));
                     result.success(true);
                 } catch (PackageManager.NameNotFoundException e) {
                     openPlayStore(INSTAGRAM_PACKAGE_NAME);
@@ -192,26 +194,26 @@ public class SocialSharePlugin
         }
     }
 
-    private void instagramShare(String type, String imagePath) {
-        final File image = new File(imagePath);
-        final Uri uri = FileProvider.getUriForFile(activity, activity.getPackageName() + ".social.share.fileprovider",
-                image);
-        final Intent share = new Intent(Intent.ACTION_SEND);
-        share.setType(type);
-        share.putExtra(Intent.EXTRA_STREAM, uri);
-        share.setPackage(INSTAGRAM_PACKAGE_NAME);
-        share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+    private void instagramShare(String type, String imagePath, String name) {
+        try {
+            String savedImageURL = MediaStore.Images.Media.insertImage(
+                    activity.getContentResolver(),
+                    imagePath,
+                    name,
+                    ""
+            );
 
-        final Intent chooser = Intent.createChooser(share, "Share to");
-        final List<ResolveInfo> resInfoList = activity.getPackageManager().queryIntentActivities(chooser,
-                PackageManager.MATCH_DEFAULT_ONLY);
+            Uri savedImageURI = Uri.parse(savedImageURL);
+            final Intent share = new Intent("com.instagram.share.ADD_TO_FEED");
+            share.setType(type);
+            share.putExtra(Intent.EXTRA_STREAM, savedImageURI);
+            share.setPackage(INSTAGRAM_PACKAGE_NAME);
+            share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
-        for (ResolveInfo resolveInfo : resInfoList) {
-            final String packageName = resolveInfo.activityInfo.packageName;
-            activity.grantUriPermission(packageName, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            activity.startActivityForResult(share, INSTAGRAM_REQUEST_CODE);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
         }
-
-        activity.startActivityForResult(chooser, INSTAGRAM_REQUEST_CODE);
     }
 
     private void facebookShare(String caption, String mediaPath) {

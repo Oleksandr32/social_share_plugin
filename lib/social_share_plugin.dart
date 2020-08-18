@@ -42,6 +42,7 @@ class SocialSharePlugin {
     return _channel.invokeMethod('shareToFeedInstagram', <String, dynamic>{
       'type': type,
       'path': file.path,
+      'name': DateTime.now().toString() + ".jpg",
     });
   }
 
